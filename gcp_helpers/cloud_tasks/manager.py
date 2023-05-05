@@ -56,7 +56,7 @@ class HttpCloudTasks:
             "http_request": {  # Specify the type of request.
                 "http_method": method,
                 "url": url,  # The full url path that the task will be sent to.
-                "headers": headers if headers else {}
+                "headers": headers if headers and isinstance(headers, dict) else {}
             }
         }
         if body:
@@ -65,7 +65,7 @@ class HttpCloudTasks:
                 payload['http_request']['body'] = body.encode()
             payload['http_request']['headers'].update = {"Content-type": "application/json"}
         if auth:
-            payload["oidc_token"] = {
+            payload['http_request']["oidc_token"] = {
                     "service_account_email": self._invoker_sa_email,
                     "audience": url
             }
@@ -81,6 +81,7 @@ class HttpCloudTasks:
             headers,
             auth
         )
+        print(task)
         resp = self._cli.create_task(request={"parent": self._queue_path, "task": task})
         print("Created task {}".format(resp.name))
 
