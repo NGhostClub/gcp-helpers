@@ -63,7 +63,7 @@ class HttpCloudTasks:
             if isinstance(body, dict):
                 body = json.dumps(body)
                 payload['http_request']['body'] = body.encode()
-            payload['http_request']['headers'].update = {"Content-type": "application/json"}
+            payload['http_request']['headers'].update({"Content-type": "application/json"})
         if auth:
             payload['http_request']["oidc_token"] = {
                     "service_account_email": self._invoker_sa_email,
