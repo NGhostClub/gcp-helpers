@@ -34,6 +34,22 @@ def hello_route(request: Request) -> Response:
 router = HttpRouter()
 router.register(hello_route, '/hello', 'GET')
 
+
+def main(request):
+    return router.response(request)
+```
+or
+```python
+from flask import Request, Response, make_response
+from gcp_helpers.functions.routers import HttpRouter
+
+router = HttpRouter()
+
+@router.route("/hello", 'GET')
+def hello_route(request: Request) -> Response:
+    return make_response('Hello', 200)
+
+
 def main(request):
     return router.response(request)
 ```
