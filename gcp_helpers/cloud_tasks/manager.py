@@ -19,9 +19,9 @@ class CloudTasksManager:
         self._location = location
         self._queue_name = queue_name
         self._key_path = key_path
-        self._cli = self._new_client()
+        self.cli = self._new_client()
         self._queue_path = self._new_queue()
-        self.http = HttpCloudTasks(self._cli, self._queue_path)
+        self.http = HttpCloudTasks(self.cli, self._queue_path)
 
     def _new_client(self):
         if not self._key_path:
@@ -32,7 +32,7 @@ class CloudTasksManager:
             )
 
     def _new_queue(self):
-        return self._cli.queue_path(self._project, self._location, self._queue_name)
+        return self.cli.queue_path(self._project, self._location, self._queue_name)
 
 
 class HttpCloudTasks:

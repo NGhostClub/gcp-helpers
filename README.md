@@ -13,7 +13,7 @@ pip install gcp-ng-helpers
 # Functions submodule
 ## Http Router
 Cloud function by default only serves single '/' (root) http endpoint.
-With this Http Router you can easy serve much more, without need to parse 
+With this Http Router you can easily serve much more, without need to parse 
 Request object for method and path
 ### Usage
 Define a function with flask.Request argument
@@ -37,3 +37,12 @@ router.register(hello_route, '/hello', 'GET')
 def main(request):
     return router.response(request)
 ```
+# Tasks submodule
+## Manager
+CloudTasksManager class is wrapper for cloud task api. Allows to shorten task creation.
+Currently, supports only http task creation
+
+# Firestore
+## Collection
+FirestoreCollection and FirestoreCollectionGroup are wrappers for firestore read/write operations
+bounded to the defined collection or collection group.
