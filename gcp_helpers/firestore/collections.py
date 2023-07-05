@@ -1,5 +1,6 @@
 import json
 import os
+from dataclasses import field, dataclass
 from typing import Generator, Any
 
 from google.cloud import firestore
@@ -69,6 +70,18 @@ class FirestoreMultiResult:
         return res
 
 
+@dataclass
+class FirestoreOrderBy:
+    field_path: str
+    direction: str = field(default=firestore.Query.ASCENDING)
+
+    def ASC(self):
+        self.direction = firestore.Query.ASCENDING
+
+    def DESC(self):
+        self.direction = firestore.Query.DESCENDING
+
+
 class FirestoreFilter(list):
     ALLOWED_OP = [
         "<",
@@ -99,13 +112,19 @@ class FirestoreCollection:
 
         return FirestoreMultiResult(stream)
 
-    def search(self, filter_query: FirestoreFilter | list[FirestoreFilter]):
+    def search(self, filter_query: FirestoreFilter | list[FirestoreFilter],
+               order_by: FirestoreOrderBy | None = None, limit: int | None = None):
         query = self._col_ref
         if isinstance(filter_query, list):
             for f in filter_query:
                 query = query.where(*f)
         else:
             query = self._col_ref.where(*filter_query)
+        if order_by:
+            query = query.order_by(order_by.field_path, direction=order_by.direction)
+        if limit:
+            query = query.limit(limit)
+
         stream = query.stream()
         return FirestoreMultiResult(stream)
 
@@ -155,7 +174,7 @@ class FirestoreCollectionGroup:
             return None
 
     def get_first_from_stream(self, docId):
-        query = self._col_ref.stream()
+        query = self._col_ref.limit(1).stream()
         document = next((doc for doc in query if doc.id == docId), None)
         if document and document.exists:
             return FirestoreResult(document)
