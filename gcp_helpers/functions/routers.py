@@ -1,5 +1,7 @@
 import json
+import traceback
 from collections import defaultdict
+from functools import wraps
 from typing import Callable
 
 from flask import Request, make_response, Response
@@ -10,9 +12,25 @@ class HttpRouter:
         self.__route_prefix = self._strip_path(prefix)
         self._routes = defaultdict(dict)
 
-    def route(self, path: str, method: str = 'GET') -> Callable:
+    @staticmethod
+    def _error_handling_decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                print(traceback.format_exc())
+                # Handle the error and return an appropriate response
+                error_message = f"An error occurred: {str(e)}"
+                return make_response(error_message, 500)
+
+        return wrapper
+
+    def route(self, path: str, method: str = 'GET', error_handling: bool = True) -> Callable:
         def decorator(func: Callable) -> Callable:
             formatted_path = self._format_path(path)
+            if error_handling:
+                func = self._error_handling_decorator(func)
             self.register(func, formatted_path, method)
             return func
 
