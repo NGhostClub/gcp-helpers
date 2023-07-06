@@ -43,10 +43,16 @@ class FirestoreResult:
 class FirestoreMultiResult:
     def __init__(self, stream: Generator[firestore.DocumentSnapshot, Any, None]):
         self._stream = stream
+        self.raw: list[firestore.DocumentSnapshot] = []
+
+        self._to_raw()
+
+    def _to_raw(self):
+        self.raw = [doc for doc in self._stream]
 
     def to_list(self, append_id=True, class_ref: type = None) -> list[any]:
         res = []
-        for doc in self._stream:
+        for doc in self.raw:
             item = doc.to_dict()
             if append_id:
                 item.update({"docId": doc.id})
@@ -56,9 +62,9 @@ class FirestoreMultiResult:
                 res.append(item)
         return res
 
-    def to_dict(self, append_id=False, class_ref: type = None) -> dict[any, any]:
+    def to_dict(self, append_id=False, class_ref: type = None) -> dict[str, any]:
         res = {}
-        for doc in self._stream:
+        for doc in self.raw:
             item = {
                 doc.id: {
                     doc.to_dict()
