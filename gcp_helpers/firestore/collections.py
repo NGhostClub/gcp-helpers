@@ -55,7 +55,7 @@ class FirestoreMultiResult:
         for doc in self.raw:
             item = doc.to_dict()
             if append_id:
-                item.update({"docId": doc.id})
+                item["docId"] = doc.id
             if class_ref and isinstance(class_ref, type):
                 res.append(class_ref(**item))
             else:
@@ -65,13 +65,12 @@ class FirestoreMultiResult:
     def to_dict(self, append_id=False, class_ref: type = None) -> dict[str, any]:
         res = {}
         for doc in self.raw:
+            docId = doc.id
             item = {
-                doc.id: {
-                    doc.to_dict()
-                }
+                f"{docId}": doc.to_dict()
             }
             if append_id:
-                item[doc.id]["docId"] = doc.id
+                item[docId]["docId"] = doc.id
             res.update(item)
         return res
 
@@ -96,8 +95,8 @@ class FirestoreFilter(list):
         ">",
         ">=",
         "!=",
-        "array-contains"
         "array-contains",
+        "array-contains-any",
         "in",
         "not-in"
     ]
@@ -106,6 +105,30 @@ class FirestoreFilter(list):
         if op not in self.ALLOWED_OP:
             raise ValueError(f"op must be one of {self.ALLOWED_OP}")
         super().__init__([field, op, value])
+
+    @classmethod
+    def equal(cls, field_name: str, value: Any):
+        return cls(field_name, "==", value)
+
+    @classmethod
+    def not_equal(cls, field_name: str, value: Any):
+        return cls(field_name, "!=", value)
+
+    @classmethod
+    def value_in(cls, field_name: str, value_list: list[Any]):
+        return cls(field_name, "in", value_list)
+
+    @classmethod
+    def value_not_in(cls, field_name: str, value_list: list[Any]):
+        return cls(field_name, "not-in", value_list)
+
+    @classmethod
+    def array_field_contains(cls, array_field_name: str, value):
+        return cls(array_field_name, "array-contains", value)
+
+    @classmethod
+    def array_field_contains_any(cls, array_field_name: str, value):
+        return cls(array_field_name, "array-contains-any", value)
 
 
 class FirestoreCollection:
@@ -157,6 +180,14 @@ class FirestoreCollection:
         res = self._col_ref.add(fields, docId)
         return res
 
+    def delete_by_path(self, document_path):
+        res = self._cli.document(document_path).delete()
+        return res
+
+    def delete(self, docId):
+        res = self._col_ref.document(docId).delete()
+        return res
+
 
 class FirestoreCollectionGroup:
     def __init__(self, project, collection_group_name):
@@ -169,6 +200,10 @@ class FirestoreCollectionGroup:
         doc_ref = self._cli.document(doc_path)
         res = doc_ref.update(field_updates)
         return res
+
+    def get_all(self):
+        stream = self._col_ref.stream()
+        return FirestoreMultiResult(stream)
 
     def get_one(self, docId, parent_path):
         doc_path = f"{parent_path}/{docId}"
@@ -186,3 +221,19 @@ class FirestoreCollectionGroup:
             return FirestoreResult(document)
         else:
             return None
+
+    def search(self, filter_query: FirestoreFilter | list[FirestoreFilter] = None,
+               order_by: FirestoreOrderBy | None = None, limit: int | None = None):
+        query = self._col_ref
+        if filter_query and isinstance(filter_query, list):
+            for f in filter_query:
+                query = query.where(*f)
+        elif filter_query and isinstance(filter_query, FirestoreFilter):
+            query = self._col_ref.where(*filter_query)
+        if order_by:
+            query = query.order_by(order_by.field_path, direction=order_by.direction)
+        if limit:
+            query = query.limit(limit)
+
+        stream = query.stream()
+        return FirestoreMultiResult(stream)

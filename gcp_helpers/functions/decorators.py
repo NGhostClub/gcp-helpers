@@ -1,4 +1,5 @@
 import base64
+import traceback
 from functools import wraps
 from flask import Request, make_response
 
@@ -119,3 +120,16 @@ class Guard:
             return func(*args, **kwargs)
         return wrapper
 
+
+def default_error_handling(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(traceback.format_exc())
+            # Handle the error and return an appropriate response
+            error_message = f"An error occurred: {str(e)}"
+            return make_response(error_message, 500)
+
+    return wrapper
