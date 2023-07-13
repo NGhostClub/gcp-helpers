@@ -144,11 +144,11 @@ class FirestoreCollection:
     def search(self, filter_query: FirestoreFilter | list[FirestoreFilter] = None,
                order_by: FirestoreOrderBy | None = None, limit: int | None = None):
         query = self._col_ref
-        if filter_query and isinstance(filter_query, list):
+        if filter_query and isinstance(filter_query, FirestoreFilter):
+            query = self._col_ref.where(*filter_query)
+        elif filter_query and isinstance(filter_query, list):
             for f in filter_query:
                 query = query.where(*f)
-        elif filter_query and isinstance(filter_query, FirestoreFilter):
-            query = self._col_ref.where(*filter_query)
         if order_by:
             query = query.order_by(order_by.field_path, direction=order_by.direction)
         if limit:
