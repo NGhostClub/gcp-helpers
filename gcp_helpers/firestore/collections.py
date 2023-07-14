@@ -87,48 +87,35 @@ class FirestoreOrderBy:
         self.direction = firestore.Query.DESCENDING
 
 
-class FirestoreFilter(list):
-    ALLOWED_OP = [
-        "<",
-        "<=",
-        "==",
-        ">",
-        ">=",
-        "!=",
-        "array-contains",
-        "array-contains-any",
-        "in",
-        "not-in"
-    ]
+class FirestoreFilter:
 
-    def __init__(self, field, op, value):
-        if op not in self.ALLOWED_OP:
-            raise ValueError(f"op must be one of {self.ALLOWED_OP}")
-        super().__init__([field, op, value])
+    @classmethod
+    def custom(cls, field_name: str, operator: str, value: Any):
+        return firestore.FieldFilter(field_name, operator, value)
 
     @classmethod
     def equal(cls, field_name: str, value: Any):
-        return cls(field_name, "==", value)
+        return firestore.FieldFilter(field_name, "==", value)
 
     @classmethod
     def not_equal(cls, field_name: str, value: Any):
-        return cls(field_name, "!=", value)
+        return firestore.FieldFilter(field_name, "!=", value)
 
     @classmethod
     def value_in(cls, field_name: str, value_list: list[Any]):
-        return cls(field_name, "in", value_list)
+        return firestore.FieldFilter(field_name, "in", value_list)
 
     @classmethod
     def value_not_in(cls, field_name: str, value_list: list[Any]):
-        return cls(field_name, "not-in", value_list)
+        return firestore.FieldFilter(field_name, "not-in", value_list)
 
     @classmethod
     def array_field_contains(cls, array_field_name: str, value):
-        return cls(array_field_name, "array-contains", value)
+        return firestore.FieldFilter(array_field_name, "array-contains", value)
 
     @classmethod
     def array_field_contains_any(cls, array_field_name: str, value):
-        return cls(array_field_name, "array-contains-any", value)
+        return firestore.FieldFilter(array_field_name, "array-contains-any", value)
 
 
 class FirestoreCollection:
@@ -141,14 +128,14 @@ class FirestoreCollection:
 
         return FirestoreMultiResult(stream)
 
-    def search(self, filter_query: FirestoreFilter | list[FirestoreFilter] = None,
+    def search(self, field_filter: firestore.FieldFilter | list[firestore.FieldFilter] = None,
                order_by: FirestoreOrderBy | None = None, limit: int | None = None):
         query = self._col_ref
-        if filter_query and isinstance(filter_query, FirestoreFilter):
-            query = self._col_ref.where(*filter_query)
-        elif filter_query and isinstance(filter_query, list):
-            for f in filter_query:
-                query = query.where(*f)
+        if field_filter and isinstance(field_filter, firestore.FieldFilter):
+            query = self._col_ref.where(filter=field_filter)
+        elif field_filter and isinstance(field_filter, list):
+            for f in field_filter:
+                query = query.where(filter=f)
         if order_by:
             query = query.order_by(order_by.field_path, direction=order_by.direction)
         if limit:
@@ -222,14 +209,14 @@ class FirestoreCollectionGroup:
         else:
             return None
 
-    def search(self, filter_query: FirestoreFilter | list[FirestoreFilter] = None,
+    def search(self, field_filter: firestore.FieldFilter | list[firestore.FieldFilter] = None,
                order_by: FirestoreOrderBy | None = None, limit: int | None = None):
         query = self._col_ref
-        if filter_query and isinstance(filter_query, list):
-            for f in filter_query:
-                query = query.where(*f)
-        elif filter_query and isinstance(filter_query, FirestoreFilter):
-            query = self._col_ref.where(*filter_query)
+        if field_filter and isinstance(field_filter, list):
+            for f in field_filter:
+                query = query.where(filter=f)
+        elif field_filter and isinstance(field_filter, firestore.FieldFilter):
+            query = self._col_ref.where(filter=field_filter)
         if order_by:
             query = query.order_by(order_by.field_path, direction=order_by.direction)
         if limit:
