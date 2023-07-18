@@ -74,6 +74,9 @@ class FirestoreMultiResult:
             res.update(item)
         return res
 
+    def len(self):
+        return len(self.raw)
+
 
 @dataclass
 class FirestoreOrderBy:
@@ -181,6 +184,10 @@ class FirestoreCollectionGroup:
         self._cli = get_firestore_client(project=project)
         self._collection_group_name = collection_group_name
         self._col_ref = self._cli.collection_group(collection_group_name)
+
+    def delete(self, docId, parent_path):
+        doc_path = f"{parent_path}/{docId}"
+        return self._cli.document(doc_path).delete()
 
     def update(self, docId, parent_path, field_updates):
         doc_path = f"{parent_path}/{docId}"
