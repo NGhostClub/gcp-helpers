@@ -189,6 +189,10 @@ class FirestoreCollectionGroup:
         doc_path = f"{parent_path}/{docId}"
         return self._cli.document(doc_path).delete()
 
+    def add(self, docId, parent_path, fields):
+        res = self._cli.collection(parent_path).add(fields, docId)
+        return res
+
     def update(self, docId, parent_path, field_updates):
         doc_path = f"{parent_path}/{docId}"
         doc_ref = self._cli.document(doc_path)
