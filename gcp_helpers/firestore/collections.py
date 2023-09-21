@@ -7,12 +7,12 @@ from google.cloud import firestore
 from google.oauth2 import service_account
 
 
-def get_firestore_client(project) -> firestore.Client:
+def get_firestore_client(project, db=None) -> firestore.Client:
     key = os.environ.get("SECRET_ACCOUNT_KEY", None)
     if key is None:
-        client = firestore.Client(project=project)
+        client = firestore.Client(project=project, database=db)
     else:
-        client = firestore.Client(project=project,
+        client = firestore.Client(project=project, database=db,
                                   credentials=service_account.Credentials.from_service_account_file(key))
     return client
 
@@ -122,8 +122,8 @@ class FirestoreFilter:
 
 
 class FirestoreCollection:
-    def __init__(self, project, collection_name):
-        self._cli = get_firestore_client(project=project)
+    def __init__(self, project, db_name, collection_name):
+        self._cli = get_firestore_client(project=project, db=db_name)
         self._col_ref = self._cli.collection(collection_name)
 
     def get_all(self):
@@ -180,8 +180,8 @@ class FirestoreCollection:
 
 
 class FirestoreCollectionGroup:
-    def __init__(self, project, collection_group_name):
-        self._cli = get_firestore_client(project=project)
+    def __init__(self, project, db_name, collection_group_name):
+        self._cli = get_firestore_client(project=project, db=db_name)
         self._collection_group_name = collection_group_name
         self._col_ref = self._cli.collection_group(collection_group_name)
 
