@@ -126,13 +126,17 @@ class FirestoreCollection:
         self._cli = get_firestore_client(project=project, db=db_name)
         self._col_ref = self._cli.collection(collection_name)
 
-    def get_all(self):
-        stream = self._col_ref.stream()
+    def get_all(self, select: list[str] | None = None):
+        if select and isinstance(select, list):
+            stream = self._col_ref.select(select).stream()
+        else:
+            stream = self._col_ref.stream()
 
         return FirestoreMultiResult(stream)
 
     def search(self, field_filter: firestore.FieldFilter | list[firestore.FieldFilter] = None,
-               order_by: FirestoreOrderBy | None = None, limit: int | None = None):
+               order_by: FirestoreOrderBy | None = None, limit: int | None = None,
+               select: list[str] | None = None):
         query = self._col_ref
         if field_filter and isinstance(field_filter, firestore.FieldFilter):
             query = self._col_ref.where(filter=field_filter)
@@ -143,6 +147,9 @@ class FirestoreCollection:
             query = query.order_by(order_by.field_path, direction=order_by.direction)
         if limit:
             query = query.limit(limit)
+
+        if select and isinstance(select, list):
+            query = query.select(select)
 
         stream = query.stream()
         return FirestoreMultiResult(stream)
@@ -199,8 +206,11 @@ class FirestoreCollectionGroup:
         res = doc_ref.update(field_updates)
         return res
 
-    def get_all(self):
-        stream = self._col_ref.stream()
+    def get_all(self, select: list[str] | None = None):
+        if select and isinstance(select, list):
+            stream = self._col_ref.select(select).stream()
+        else:
+            stream = self._col_ref.stream()
         return FirestoreMultiResult(stream)
 
     def get_one(self, docId, parent_path):
@@ -221,7 +231,8 @@ class FirestoreCollectionGroup:
             return None
 
     def search(self, field_filter: firestore.FieldFilter | list[firestore.FieldFilter] = None,
-               order_by: FirestoreOrderBy | None = None, limit: int | None = None):
+               order_by: FirestoreOrderBy | None = None, limit: int | None = None,
+               select: list[str] | None = None):
         query = self._col_ref
         if field_filter and isinstance(field_filter, list):
             for f in field_filter:
@@ -232,6 +243,9 @@ class FirestoreCollectionGroup:
             query = query.order_by(order_by.field_path, direction=order_by.direction)
         if limit:
             query = query.limit(limit)
+
+        if select and isinstance(select, list):
+            query = query.select(select)
 
         stream = query.stream()
         return FirestoreMultiResult(stream)
